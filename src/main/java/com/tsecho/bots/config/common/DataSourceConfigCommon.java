@@ -26,12 +26,13 @@ public class DataSourceConfigCommon extends ConfigCommon {
         super(hikariCommonProperties);
     }
 
+
     @Bean(name = "dsCommon")
     public HikariDataSource dataSourceCommon() {
         return new HikariDataSource(this);
     }
 
-    @Qualifier("dsCommon")
+
     @Bean(name = "emfCommon")
     public LocalContainerEntityManagerFactoryBean entityManagerFactoryCommon( @Qualifier("dsCommon") HikariDataSource dataSourceCommon) {
 
@@ -50,9 +51,9 @@ public class DataSourceConfigCommon extends ConfigCommon {
             }
         };
     }
-    @Qualifier("dsCommon")
+
     @Bean(name = "tmCommon")
-    public PlatformTransactionManager transactionManagerCommon(EntityManagerFactory entityManagerFactoryCommon) {
+    public PlatformTransactionManager transactionManagerCommon(@Qualifier("emfCommon") EntityManagerFactory entityManagerFactoryCommon) {
         return new JpaTransactionManager(entityManagerFactoryCommon);
     }
 }

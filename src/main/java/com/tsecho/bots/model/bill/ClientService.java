@@ -6,6 +6,7 @@ import org.hibernate.annotations.Immutable;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
+
 @Entity
 @Immutable
 @Data

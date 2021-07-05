@@ -3,7 +3,6 @@ package com.tsecho.bots.config.bill;
 import com.zaxxer.hikari.HikariDataSource;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -29,16 +28,17 @@ public class DataSourceConfigBill extends ConfigBill {
         super(billProps);
     }
 
+
     @Bean(name = "dsBill")
     @Primary
     public HikariDataSource dataSourceBill() {
         return new HikariDataSource(this);
     }
 
-    @Qualifier("dsBill")
+
     @Bean(name = "emfBill")
-    @Primary
-    public LocalContainerEntityManagerFactoryBean entityManagerFactoryBill(HikariDataSource dataSourceBill) {
+   @Primary
+    public LocalContainerEntityManagerFactoryBean entityManagerFactoryBill(@Qualifier("dsBill") HikariDataSource dataSourceBill) {
 
         return new LocalContainerEntityManagerFactoryBean() {
             {
@@ -54,10 +54,10 @@ public class DataSourceConfigBill extends ConfigBill {
             }
         };
     }
-    @Qualifier("dsBill")
+
     @Bean(name = "tmBill")
     @Primary
-    public PlatformTransactionManager transactionManagerPharm(EntityManagerFactory entityManagerFactoryPharm) {
+    public PlatformTransactionManager transactionManagerPharm(@Qualifier("emfBill") EntityManagerFactory entityManagerFactoryPharm) {
         return new JpaTransactionManager(entityManagerFactoryPharm);
     }
 }

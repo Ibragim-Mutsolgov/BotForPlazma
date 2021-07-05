@@ -1,18 +1,14 @@
 package com.tsecho.bots.api;
 
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Component
 @Getter
@@ -22,25 +18,33 @@ public class Keyboard {
 
     ReplyKeyboardMarkup rkmGetPhoneAndLocation;
 
+    List<List<InlineKeyboardButton>> items = new ArrayList<>();
+
     public Keyboard() {
         ikmGetServiceInfo = createIkmGetServiceInfo() ;
+        rkmGetPhoneAndLocation = createReplyKeyboard();
     }
 
     private InlineKeyboardMarkup createIkmGetServiceInfo(){
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> inlineKeys = new ArrayList<>();
         List<InlineKeyboardButton> buttons = new ArrayList<>();
-        buttons.add(getIKMButton("Статус услуги", "getStatus"));
-        inlineKeys.add(buttons);
+        items.add(getIKMButton("status","Статус услуги"));
+        items.add(getIKMButton("credit","Обещанный платеж"));
+        items.add(getIKMButton("new","Заказать услугу"));
+        items.add(getIKMButton("support","Открыть чат ТП"));
+        inlineKeys.addAll(items);
         inlineKeyboardMarkup.setKeyboard(inlineKeys);
         return inlineKeyboardMarkup;
     }
 
-    private InlineKeyboardButton getIKMButton(String btnText, String cbData){
+    private List<InlineKeyboardButton> getIKMButton(String key, String txt){
+        List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton btn = new InlineKeyboardButton();
-        btn.setText(btnText);
-        btn.setCallbackData(cbData);
-        return btn;
+        btn.setText(txt);
+        btn.setCallbackData(key);
+        row.add(btn);
+        return row;
     }
 
     private ReplyKeyboardMarkup createReplyKeyboard(){
@@ -60,23 +64,10 @@ public class Keyboard {
         getPhoneButton.setRequestLocation(true);
         keyboardFirstRow.add(getPhoneButton);
 
-        // second keyboard line
-//        KeyboardRow keyboardSecondRow = new KeyboardRow();
-//        KeyboardButton getLocationButton = new KeyboardButton();
-//        getLocationButton.setText("Отправить геолокацию");
-//        getLocationButton.setRequestLocation(true);
-//        keyboardSecondRow.add(getLocationButton);
-
         // add array to list
         keyboard.add(keyboardFirstRow);
-   //     keyboard.add(keyboardSecondRow);
-        // add list to our keyboard
         replyKeyboardMarkup.setKeyboard(keyboard);
         return replyKeyboardMarkup;
     }
-
-//    private KeyboardRow getKeyboardRow(String buttonText, boolean contact, boolean location){
-//
-//    }
 
 }
