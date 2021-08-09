@@ -105,11 +105,6 @@ public class CustomerServiceImpl implements CustomerService {
         } else if (update.hasShippingQuery()) {
             customer = getUser(update.getShippingQuery().getFrom(), update.getShippingQuery().getId(), "");
         }
-//        } else if (update.hasPoll()) {
-//
-//        }
-
-        ///  Location location = update.getMyChatMember().getChat().getLocation().getLocation();
 
         return customer;
     }

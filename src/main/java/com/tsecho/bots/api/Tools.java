@@ -38,7 +38,7 @@ public class Tools {
         Graphics2D g2d = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB).createGraphics();
         int firstColWidth = g2d.getFontMetrics().stringWidth(" Договор ");
         int secondColWidth = g2d.getFontMetrics().stringWidth(" Услуга ");
-        int thirdColumnWidth = g2d.getFontMetrics().stringWidth(" Заблокирована по балансу ");
+        int thirdColumnWidth = g2d.getFontMetrics().stringWidth(" Заблокирована ");
         int charHeight = g2d.getFontMetrics().getHeight();
         Font f = g2d.getFont();
 
@@ -60,10 +60,6 @@ public class Tools {
         g2d.drawString("Договор", 4, 22);
         g2d.drawString("Услуга", firstColWidth+5, 22);
         g2d.drawString("Статус", firstColWidth+secondColWidth+6, 22);
-
-
-
-
         int i = 1;
         for (ClientService cs : list){
             g2d.drawLine(0,charHeight*2*i,width,charHeight*2*i); // row

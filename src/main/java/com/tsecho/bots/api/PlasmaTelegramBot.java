@@ -62,13 +62,14 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
         SendMessage replyMsg = new SendMessage();
-       replyMsg.enableWebPagePreview();
-
+        replyMsg.enableWebPagePreview();
+        if (update.hasMessage())
         // Смотрим обрабатывали мы такое сообщение или нет и пропускаем если было
         if (update.getUpdateId() <= lastUpdateId)
             return replyMsg;
         this.lastUpdateId = update.getUpdateId();
         // Ищем юзверя
+
         Customer customer = customerServiceImpl.requestUser(update);
 
         if (customer.getPhone() == null && update.hasMessage()) {
@@ -115,7 +116,6 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
 
     @Override
     public String getBotPath() {
-
         return null;
     }
 
