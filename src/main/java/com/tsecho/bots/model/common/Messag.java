@@ -11,18 +11,18 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "tmmessages")
 @Data
-public class Message {
+public class Messag {
     @Id
     @Column(name="userid")
     Long id;
     String message;
 
-    public Message(Long id, String text){
+    public Messag(Long id, String text){
         this.id = id;
         this.message = text;
     }
 
-    public Message() {
+    public Messag() {
 
     }
 }

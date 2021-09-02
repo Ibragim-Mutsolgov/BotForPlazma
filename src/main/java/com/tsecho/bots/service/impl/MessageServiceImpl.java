@@ -1,6 +1,6 @@
 package com.tsecho.bots.service.impl;
 
-import com.tsecho.bots.model.common.Message;
+import com.tsecho.bots.model.common.Messag;
 import com.tsecho.bots.repository.common.MessageRepository;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +12,7 @@ public class MessageServiceImpl {
         this.messageRepository = messageRepository;
     }
 
-    public void addMessage(Message message) {
+    public void addMessage(Messag message) {
         this.messageRepository.save(message);
     }
 }

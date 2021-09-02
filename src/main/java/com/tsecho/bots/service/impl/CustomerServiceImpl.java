@@ -23,6 +23,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Autowired
     CustomerRepository customerRepository;
 
+    // Создаем виртуальную таблицу пользователей
     HashMap<Long, Customer> customers = new HashMap<Long, Customer>();
 
     @PostConstruct
