@@ -16,6 +16,7 @@ import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -24,6 +25,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.tsecho.bots.api.Tools.createImage;
 
@@ -42,7 +44,6 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
     String phone;
 
     xmlRequest xml = new xmlRequest();
-
 
     @Autowired
     Keyboard kb;
@@ -82,7 +83,7 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
 
         Customer customer = customerServiceImpl.requestUser(update);
 
-        // Смотрим обрабатывали мы такое сообщение или нет и пропускаем если было
+        // Смотрим: обрабатывали мы такое сообщение или нет и пропускаем если было
         if (update.getUpdateId() <= lastUpdateId) return replyMsg;
 
         this.lastUpdateId = update.getUpdateId();
@@ -101,12 +102,17 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
             }
         }
 
-
         replyMsg.setChatId(customer.getChatid());
         setPhone(customer.getPhone().replace("+", ""));
         //Обработка Текста
         if (update.hasMessage()) {
-            replyMsg.setText("Выберете услугу.");
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(replyMsg.getChatId());
+            deleteMessage.setMessageId(update.getMessage().getMessageId());
+            execute(deleteMessage);
+            deleteMessage.setMessageId((update.getMessage().getMessageId()+1));
+            replyMsg.setText("Выберите услугу.");
+            setPhone(update.getMessage().getText());
             replyMsg.setReplyMarkup(kb.getIkmGetServiceInfo());
             replyMsg.setChatId(update.getMessage().getFrom().getId().toString());
             return replyMsg;
@@ -114,36 +120,80 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
 
         //Обработка кнопки Обещанный платеж
         if (update.getCallbackQuery().getData().equals("credit")) {
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(replyMsg.getChatId());
+            deleteMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            execute(deleteMessage);
             xml.setPhone(phone);
             xml.xmlLoginAndPass();
-            replyMsg.setText(xml.getUser());
-            if (xml.getS().length > 1) {//Для случая, когда количества договоров более одного
-                replyMsg.setReplyMarkup(setButtons(xml.getS()));
+            if(!xml.getNumbersAgreements().isEmpty()){
+                if (xml.getNumbersAgreements().size() > 0) {//Для случая, когда количества договоров более одного
+                    replyMsg.setText(xml.getUsersMessage());
+                    replyMsg.setReplyMarkup(setButtons(xml.getNumbersAgreements()));
+                    replyMsg.setChatId(update.getCallbackQuery().getFrom().getId().toString());
+                    xml.getNumbersAgreements().clear();
+                    return replyMsg;
+                }
+            }else {
+                replyMsg.setText(xml.getUsersMessage());
+                if(xml.getUsersMessage() == "Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку." |
+                    xml.getUsersMessage() == "Ваш договор не оформлен на физическое лицо. Обратитесь в техническую поддержку." |
+                    xml.getUsersMessage() == "Ваш договор оформлен на юридическое лицо. Обратитесь в техническую поддержку." |
+                    xml.getUsersMessage() == "Телеграмм-бот временно неисправен. Обратитесь в техническую поддержку."){
+                    replyMsg.setReplyMarkup(tpButtons());
+                }else{
+                    replyMsg.setReplyMarkup(kb.getIkmGetServiceInfo());
+                }
                 replyMsg.setChatId(update.getCallbackQuery().getFrom().getId().toString());
-                ;
-                return replyMsg;
-            } else {
                 return replyMsg;
             }
-        } else if (update.getCallbackQuery().getData().startsWith("agr-")) {
-            xml.setBool(true);
-            xml.setNumberAgreements(update.getCallbackQuery().getData().replace("agr-",""));
-            xml.getUser();
+        }else if (update.getCallbackQuery().getData().startsWith("agr-")) {
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(replyMsg.getChatId());
+            deleteMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            execute(deleteMessage);
+            xml.setPhone(phone);
+            xml.setAgreement(update.getCallbackQuery().getData().replace("agr-",""));
+            replyMsg.setText(xml.clickButtonsNumberAgreements());
+            if(xml.clickButtonsNumberAgreements() == "Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку." |
+                xml.clickButtonsNumberAgreements() == "Ваш договор не оформлен на физическое лицо. Обратитесь в техническую поддержку." |
+                xml.clickButtonsNumberAgreements() == "Ваш договор оформлен на юридическое лицо. Обратитесь в техническую поддержку." ){
+                replyMsg.setReplyMarkup(tpButtons());
+            }else{
+                replyMsg.setReplyMarkup(kb.getIkmGetServiceInfo());
+            }
             replyMsg.setChatId(update.getCallbackQuery().getFrom().getId().toString());
+            xml.setAgreement(null);
             return replyMsg;
         }
 
-
-
-
-        if(update.getCallbackQuery().getData().equals("backPromise")){
+        if(update.getCallbackQuery().getData().equals("menu")){
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(replyMsg.getChatId());
+            deleteMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            execute(deleteMessage);
             replyMsg.setText("Выберите услугу.");
             replyMsg.setReplyMarkup(kb.getIkmGetServiceInfo());
             replyMsg.setChatId(update.getCallbackQuery().getFrom().getId().toString());
             return replyMsg;
         }
 
+        if(update.getCallbackQuery().getData().equals("backPromise")){
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(replyMsg.getChatId());
+            deleteMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            execute(deleteMessage);
+            replyMsg.setText("Выберите услугу.");
+            replyMsg.setReplyMarkup(kb.getIkmGetServiceInfo());
+            replyMsg.setChatId((update.getCallbackQuery().getFrom().getId().toString()));
+            return replyMsg;
+        }
+
         if(update.getCallbackQuery().getData().equals("new")){
+            DeleteMessage delete = new DeleteMessage();
+            delete.setChatId(replyMsg.getChatId());
+            delete.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            execute(delete);
             replyMsg.setText("Перейдите на сайт для заказа услуги.");
             replyMsg.setReplyMarkup(kb.getIkmGetUrl());
             replyMsg.setChatId(update.getCallbackQuery().getFrom().getId().toString());
@@ -151,39 +201,40 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
         }
 
         if(update.getCallbackQuery().getData().equals("back")){
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(replyMsg.getChatId());
+            deleteMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            execute(deleteMessage);
             replyMsg.setText("Выберите услугу.");
             replyMsg.setReplyMarkup(kb.getIkmGetServiceInfo());
-            replyMsg.setChatId(update.getCallbackQuery().getFrom().getId().toString());
+            replyMsg.setChatId((update.getCallbackQuery().getFrom().getId().toString()));
             return replyMsg;
         }
 
         if(update.getCallbackQuery().getData().equals("support")){
-            replyMsg.setText("Нажата кнопка открыть чат тп.");
             replyMsg.setChatId(update.getCallbackQuery().getFrom().getId().toString());
             return replyMsg;
         }
 
         // У нас есть номер пользователя, необходимо получить услуги
-
-
-
         if (update.hasMessage() && update.getMessage().getText() != null) {
             messageServiceImpl.addMessage(new Messag(update.getMessage().getFrom()
                     .getId(), update.getMessage().getText()));
         }
 
         // Здесь мы возвращаем меню
-
         List<ClientService> asList = clientServiceService.findAllUserByMobileOrPhone(phone, phone);
 
         // Получили услуги, отдаем их
 
         //Условие для кнопки статус услуги
-
         if (update.getCallbackQuery().getData().equals("status")) {
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(replyMsg.getChatId());
+            deleteMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            execute(deleteMessage);
             if (asList == null || asList.isEmpty()) {
-                replyMsg.setText("Ваш номер телефона не привязан к услуге. Выберите одну" +
-                        " из ниже перечисленных.");
+                replyMsg.setText("Ваш номер телефона не привязан к услуге. Нажмите соответствующую кнопку ниже.");
                 replyMsg.setChatId(customer.getChatid());
             } else {
                 try {
@@ -194,35 +245,38 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (TelegramApiException tae) {
-                    replyMsg.setText("Не удалось загрузить.");
+                    replyMsg.setText("Не удалось загрузить. Обратитесь в поддержку.");
                 }
             }
             replyMsg.setReplyMarkup(kb.getIkmGetServiceInfo());
-
             replyMsg.setChatId(update.getCallbackQuery().getFrom().getId().toString());
-
             return replyMsg;
         }
-
         replyMsg.setReplyMarkup(kb.getIkmGetServiceInfo());
-
         return replyMsg;
     }
 
     //кнопки для договоров
-    public InlineKeyboardMarkup setButtons(String[] string){
+    public InlineKeyboardMarkup setButtons(Map<String, String> string){
+        String[] key = new String[string.size()];
+        String[] values = new String[string.size()];
+        int k=0;
+        for (Map.Entry<String, String> item : string.entrySet()) {
+            key[k] = item.getKey();
+            values[k] = item.getValue();
+            k++;
+        }
         PlasmaKeyboard inlineKeyboardMarkup = new PlasmaKeyboard();
         inlineKeyboardMarkup.setType(2); // 2 - меню для выбора договора
         List<List<InlineKeyboardButton>> lst2 = new ArrayList<>();
-        for(int i=0; i<string.length; i++) {
+        for(int i=0; i<string.size(); i++) {
             List<InlineKeyboardButton> lst = new ArrayList<>();
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText(string[i]);
-            button.setCallbackData("agr-"+string[i]);
+            button.setText(values[i]);
+            button.setCallbackData("agr-"+key[i]);
             lst.add(button);
             lst2.add(lst);
         }
-        List<List<InlineKeyboardButton>> lst3 = new ArrayList<>();
         List<InlineKeyboardButton> lst1 = new ArrayList<>();
         InlineKeyboardButton button2 = new InlineKeyboardButton();
         button2.setText("Назад");
@@ -233,17 +287,37 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
         return inlineKeyboardMarkup;
     }
 
-    public String getPhone() {
-        return phone;
+    //Кнопка ТП
+    public InlineKeyboardMarkup tpButtons(){
+        InlineKeyboardMarkup inline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> lst = new ArrayList<>();
+
+        List<InlineKeyboardButton> lst2 = new ArrayList<>();
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText("Техническая поддержка");
+        button.setUrl("https://telegram.me/terralinkbot");
+        button.setCallbackData("tp");
+        lst2.add(button);
+        lst.add(lst2);
+
+        List<InlineKeyboardButton> lst3 = new ArrayList<>();
+        InlineKeyboardButton button2 = new InlineKeyboardButton();
+        button2.setText("Основное меню");
+        button2.setCallbackData("menu");
+        lst3.add(button2);
+        lst.add(lst3);
+        inline.setKeyboard(lst);
+        return inline;
     }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
     @Override
     public String getBotPath() {
         return null;
     }
-
 }
+                                                                                                                                                                       //Авторы: Цечоев Багаудин
+                                                                                                                                                                       //        Муцольгов Ибрагим

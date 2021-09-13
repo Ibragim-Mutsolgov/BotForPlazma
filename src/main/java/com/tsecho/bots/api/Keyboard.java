@@ -54,6 +54,9 @@ public class Keyboard {
     private List<InlineKeyboardButton> getIKMButton(String key, String txt){
         List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton btn = new InlineKeyboardButton();
+        if(key == "support" & txt == "Открыть чат ТП"){
+            btn.setUrl("https://telegram.me/terralinkbot");
+        }
         btn.setText(txt);
         btn.setCallbackData(key);
         row.add(btn);
