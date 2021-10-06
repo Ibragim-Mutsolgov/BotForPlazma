@@ -17,14 +17,17 @@ public class Keyboard {
 
     InlineKeyboardMarkup ikmGetServiceInfo;
 
+    InlineKeyboardMarkup ikmGetService;
+
     ReplyKeyboardMarkup rkmGetPhoneAndLocation;
 
     InlineKeyboardMarkup ikmGetYesOrNo;
 
-    InlineKeyboardMarkup ikmGetUrl;
 
     //Для четырех основных кнопок
     List<List<InlineKeyboardButton>> items = new ArrayList<>();
+
+    List<List<InlineKeyboardButton>> item = new ArrayList<>();
     //Для кнопок Да и Нет
     List<List<InlineKeyboardButton>> itemsYesOrNo = new ArrayList<>();
     //Для кнопки Перейти
@@ -34,7 +37,7 @@ public class Keyboard {
         ikmGetServiceInfo = createIkmGetServiceInfo() ;
         rkmGetPhoneAndLocation = createReplyKeyboard();
         ikmGetYesOrNo = createIkmGetServiceYesOrNo();
-        ikmGetUrl = createIkmGetServiceUrl();
+        ikmGetService = createIkmGetService();
     }
 
     //Два метода для четырех основных кнопок
@@ -54,6 +57,9 @@ public class Keyboard {
     private List<InlineKeyboardButton> getIKMButton(String key, String txt){
         List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton btn = new InlineKeyboardButton();
+        if(key == "new" & txt == "Заказать услугу"){
+            btn.setUrl("https://plasmatelecom.ru/");
+        }
         if(key == "support" & txt == "Открыть чат ТП"){
             btn.setUrl("https://telegram.me/terralinkbot");
         }
@@ -62,6 +68,33 @@ public class Keyboard {
         row.add(btn);
         return row;
     }
+
+    private InlineKeyboardMarkup createIkmGetService(){
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> inlineKeys = new ArrayList<>();
+        item.add(getIKMButto("credit","Обещанный платеж"));
+        item.add(getIKMButto("new","Заказать услугу"));
+        item.add(getIKMButto("support","Открыть чат ТП"));
+        inlineKeys.addAll(item);
+        inlineKeyboardMarkup.setKeyboard(inlineKeys);
+        return inlineKeyboardMarkup;
+    }
+
+    private List<InlineKeyboardButton> getIKMButto(String key, String txt){
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        InlineKeyboardButton btn = new InlineKeyboardButton();
+        if(key == "new" & txt == "Заказать услугу"){
+            btn.setUrl("https://plasmatelecom.ru/");
+        }
+        if(key == "support" & txt == "Открыть чат ТП"){
+            btn.setUrl("https://telegram.me/terralinkbot");
+        }
+        btn.setText(txt);
+        btn.setCallbackData(key);
+        row.add(btn);
+        return row;
+    }
+
 
     //Два метода для кнопок Да и Нет
     private InlineKeyboardMarkup createIkmGetServiceYesOrNo(){
@@ -78,30 +111,6 @@ public class Keyboard {
     private List<InlineKeyboardButton> getIKMButtonYesOrNo(String key, String txt){
         List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton btn = new InlineKeyboardButton();
-        btn.setText(txt);
-        btn.setCallbackData(key);
-        row.add(btn);
-        return row;
-    }
-
-    //Два метода для кнопки Перейти
-    private InlineKeyboardMarkup createIkmGetServiceUrl(){
-        InlineKeyboardMarkup inlineKeyboardMarkupUrl = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> inlineKeysUrl = new ArrayList<>();
-        List<InlineKeyboardButton> buttons = new ArrayList<>();
-        itemsUrl.add(getIKMButtonUrl("url","Перейти"));
-        itemsUrl.add(getIKMButtonUrl("back", "Назад"));
-        inlineKeysUrl.addAll(itemsUrl);
-        inlineKeyboardMarkupUrl.setKeyboard(inlineKeysUrl);
-        return inlineKeyboardMarkupUrl;
-    }
-
-    private List<InlineKeyboardButton> getIKMButtonUrl(String key, String txt){
-        List<InlineKeyboardButton> row = new ArrayList<>();
-        InlineKeyboardButton btn = new InlineKeyboardButton();
-        if(key=="url") {
-            btn.setUrl("https://plasmatelecom.ru/");
-        }
         btn.setText(txt);
         btn.setCallbackData(key);
         row.add(btn);
