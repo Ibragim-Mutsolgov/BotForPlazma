@@ -133,7 +133,7 @@ public class Tarif {
                                             }
                                         }
                                     }
-                                }else if(employeeAgrm.getLength() > 0 & employeeNumber.getLength() > 0) {
+                                }else if(employeeAgrm.getLength() > 1 & employeeNumber.getLength() > 1) {
                                     Map<String, String> numbersLength = new HashMap<>();//Создаю массив, чтобы сложить в него номера договоров
                                     for (int i = 0; i < employeeNumber.getLength(); i++) {
                                         Node number = employeeNumber.item(i);

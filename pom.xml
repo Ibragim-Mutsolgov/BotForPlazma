@@ -15,7 +15,7 @@
     <description>Demo project for Spring Boot</description>
     <properties>
         <java.version>11</java.version>
-        <cxf-rt-frontend-jaxws.version>3.1.6</cxf-rt-frontend-jaxws.version>
+        <cxf-rt-frontend-jaxws.version>3.4.5</cxf-rt-frontend-jaxws.version>
     </properties>
     <dependencies>
         <dependency>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots</artifactId>
-            <version>5.2.0</version>
+            <version>5.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -59,12 +59,12 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.49</version>
+            <version>8.0.25</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>5.4.30.Final</version>
+            <version>5.5.8.Final</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.data</groupId>
@@ -92,7 +92,6 @@
         <dependency>
             <groupId>wsdl4j</groupId>
             <artifactId>wsdl4j</artifactId>
-            <version>1.6.1</version>
         </dependency>
 
     </dependencies>
