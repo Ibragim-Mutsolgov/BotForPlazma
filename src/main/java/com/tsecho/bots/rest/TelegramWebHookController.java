@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
 @RestController
@@ -19,8 +22,13 @@ public class TelegramWebHookController {
     @Autowired
     PlasmaTelegramBot plasmaTelegramBot;
 
-    public TelegramWebHookController(PlasmaTelegramBot plasmaTelegramBot) {
+    public TelegramWebHookController(PlasmaTelegramBot plasmaTelegramBot) throws TelegramApiException {
+
         this.plasmaTelegramBot = plasmaTelegramBot;
+        SetWebhook wh = new SetWebhook();
+        wh.setUrl(plasmaTelegramBot.getWebhook());
+        wh.setCertificate(new InputFile(plasmaTelegramBot.getCertFile()));
+        this.plasmaTelegramBot.setWebhook(wh);
     }
 
     @RequestMapping(value = "/", method = RequestMethod.POST)
