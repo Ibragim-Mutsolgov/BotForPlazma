@@ -49,7 +49,7 @@ public class Tarif {
     public String getTarif(){
         String request = requestTarif("""
                  <ns1:Login>
-                 <login>admin</login> <pass>dcgkmpxv0g</pass> </ns1:Login>
+                 <login>конфиденциальная информация</login> <pass>конфиденциальная информация</pass> </ns1:Login>
                 """);
 
         if (request.equals(error)){
@@ -234,7 +234,7 @@ public class Tarif {
     public String getClickTarif(){
         String request = requestTarif("""
                  <ns1:Login>
-                 <login>admin</login> <pass>dcgkmpxv0g</pass> </ns1:Login>
+                 <login>конфиденциальная информация</login> <pass>конфиденциальная информация</pass> </ns1:Login>
                 """);
 
         if (request.equals(error)){

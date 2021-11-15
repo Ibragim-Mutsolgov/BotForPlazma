@@ -64,7 +64,7 @@ public class xmlRequest {
         //первый запрос: авторизация
         String exception = request("""
                  <ns1:Login>
-                 <login>admin</login> <pass>dcgkmpxv0g</pass> </ns1:Login>
+                 <login>конфиденциальная информация</login> <pass>конфиденциальная информация</pass> </ns1:Login>
                 """);
 
         if(!exception.equals(error)) {
@@ -211,7 +211,7 @@ public class xmlRequest {
             //Когда пользователь не нажал кнопку "Обещанный платеж" (тут вопрос авторизации)
             String s = request("""
                      <ns1:Login>
-                     <login>admin</login> <pass>dcgkmpxv0g</pass> </ns1:Login>
+                     <login>конфиденциальная информация</login> <pass>конфиденциальная информация</pass> </ns1:Login>
                     """);
 
             if (!s.equals(error)) {

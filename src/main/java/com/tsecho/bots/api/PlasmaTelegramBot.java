@@ -39,6 +39,7 @@ public class PlasmaTelegramBot extends TelegramWebhookBot {
 
     String phone;
 
+    String certFile;
 
 
     @Autowired
