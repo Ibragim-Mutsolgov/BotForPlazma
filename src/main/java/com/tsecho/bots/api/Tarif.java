@@ -41,53 +41,58 @@ public class Tarif {
     public String getNumber() { return number; }//Геттер
     public void setNumber(String number) { this.number = number; }//Сеттер
 
+    String error = "";
+    String botError = "Телеграмм-бот временно не исправен. Обратитесь в техническую поддержку.";
+    String service = "Ваш номер телефона не привязан к услуге. Нажмите на кнопку \"Заказать услугу\".";
+    String notService = "Для этого договора услуги не определены.";
+
     public String getTarif(){
         String request = requestTarif("""
                  <ns1:Login>
                  <login>admin</login> <pass>dcgkmpxv0g</pass> </ns1:Login>
-                """, "Запрос на авторизацию");
+                """);
 
-        if (request == "Не работает"){
-            return ("Телеграмм-бот временно не исправен. Обратитесь в техническую поддержку.");
+        if (request.equals(error)){
+            return botError;
         }else{
             request = requestTarif(" <ns1:getAccounts> <flt>\n" +
                     " <phone>" + getPhone() + "</phone> </flt>\n" +//Здесь должен быть номер
-                    " </ns1:getAccounts>\n", "Запрос на определение данных по номеру телефона");
+                    " </ns1:getAccounts>\n");
 
-            if(request == "Не работает"){
-                return ("Ваш номер телефона не привязан к услуге. Нажмите на кнопку \"Заказать услугу\".");
+            if(request.equals(error)){
+                return service;
             }else{
                 if(tarifFile() == null){
-                    return ("Для этого договора услуги не определены.");
+                    return notService;
                 }else{
                     //Отслеживаем элементы из Tarif.xml
                     NodeList employeeUid = tarifFile().getDocumentElement().getElementsByTagName("uid");//Указание тега, который будем отслеживать
 
                     //Проверяем существует ли элемент uid
                     if (employeeUid.getLength() <= 0) {
-                        return ("Для этого договора услуги не определены.");
+                        return notService;
                     }else if(employeeUid.getLength() >1){
-                        return ("Для этого договора услуги не определены.");
+                        return notService;
                     }else if(employeeUid.getLength() == 1){
                         Node employeeUi = employeeUid.item(0);
 
                         //Третий запрос: определение количества договоров
                         request = requestTarif(" <ns1:getAgreements> <flt>\n" +
                                 " <userid>" + employeeUi.getTextContent() + "</userid> </flt>\n" +
-                                " </ns1:getAgreements>\n", "Запрос на определение количества договоров по UID");
+                                " </ns1:getAgreements>\n");
 
-                        if(request == "Не работает"){
-                            return ("Для этого договора услуги не определены.");
+                        if(request.equals(error)){
+                            return notService;
                         }else{
                             if(tarifFile() == null){
-                                return ("Для этого договора услуги не определены.");
+                                return notService;
                             }else{
                                 //Отслеживаем элементы из Tarif.xml
                                 NodeList employeeAgrm = tarifFile().getDocumentElement().getElementsByTagName("agrmid");//Указание тега, который будем отслеживать
                                 NodeList employeeNumber = tarifFile().getDocumentElement().getElementsByTagName("number");//Указание тега, который будем отслеживать
 
                                 if(employeeAgrm.getLength() <=0 & employeeNumber.getLength() <= 0){
-                                    return ("Для этого договора услуги не определены.");
+                                    return notService;
                                 }else if(employeeAgrm.getLength() == 1 & employeeNumber.getLength() == 1){
                                     NodeList employeeBalance = tarifFile().getDocumentElement().getElementsByTagName("balancetext");//Указание тега, который будем отслеживать
                                     Node agrm = employeeAgrm.item(0);
@@ -96,13 +101,13 @@ public class Tarif {
                                     request = requestTarif("<ns1:getVgroups>\n" +
                                             " <flt>\n" +
                                             " <agrmid>"+agrm.getTextContent()+"</agrmid> <archive>0</archive> <agentid>1</agentid> </flt>\n" +
-                                            " </ns1:getVgroups>", "Запрос на определение тарифного плана");
+                                            " </ns1:getVgroups>");
 
-                                    if(request == "Не работает") {
-                                        return ("Для этого договора услуги не определены.");
+                                    if(request.equals(error)) {
+                                        return notService;
                                     }else {
                                         if (tarifFile() == null) {
-                                            return ("Для этого договора услуги не определены.");
+                                            return notService;
                                         } else {
                                             //Отслеживаем элементы из Tarif.xml
                                             NodeList employeeId = tarifFile().getDocumentElement().getElementsByTagName("vgid");//Указание тега, который будем отслеживать
@@ -110,9 +115,9 @@ public class Tarif {
                                             NodeList employeeBlocked = tarifFile().getDocumentElement().getElementsByTagName("blocked");
 
                                             if(employeeId.getLength() <= 0 & employeeTarif.getLength() <= 0){
-                                                return ("Для этого договора услуги не определены.");
+                                                return notService;
                                             }else if(employeeId.getLength() > 0 & employeeTarif.getLength() > 0){
-                                                String out = new String();
+                                                String out = null;
                                                 String[] id_ = new String[employeeId.getLength()];
                                                 String[] tarif_ = new String[employeeId.getLength()];
                                                 for(int i = 0; i < employeeId.getLength(); i++){
@@ -129,7 +134,7 @@ public class Tarif {
                                                 String status = statusToString(blocked.getTextContent());
                                                 return "Договор № "+number.getTextContent() +"\nБаланс счета: " +  balance.getTextContent() + " рублей\n" + "\nСтатус услуги: " + status  + out;
                                             }else{
-                                                return ("Для этого договора услуги не определены.");
+                                                return notService;
                                             }
                                         }
                                     }
@@ -149,15 +154,14 @@ public class Tarif {
                 }
             }
         }
-        return ("Для этого договора услуги не определены.");
+        return notService;
     }
 
     //Метод для отправки запросов
-    public String requestTarif(String xmlIn, String xmlNumber) {
+    public String requestTarif(String xmlIn) {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:ns1=\"urn:api3\"> <SOAP-ENV:Body>\n"
                 + xmlIn + " </SOAP-ENV:Body>\n" +
                 " </SOAP-ENV:Envelope>";
-        System.out.println(xml);
         StringBuilder resp = new StringBuilder();
         try {
             HttpURLConnection con = (HttpURLConnection) new URL("http://185.35.128.7:34012").openConnection();
@@ -180,10 +184,9 @@ public class Tarif {
                     resp.append(inputLine);
                 }
                 in.close();
-                System.out.println(xmlNumber + ": " + resp);
 
             } catch (IOException e) {
-                return ("Не работает");
+                return error;
             }
             //////Вывод сессии
             con.getHeaderFields();
@@ -195,10 +198,10 @@ public class Tarif {
                 writer.write(resp.toString());
                 writer.flush();
             } catch (IOException ex) {
-                return ("Не работает");
+                return error;
             }
         } catch (IOException e) {
-            return ("Не работает");
+            return error;
         }
         return null;
     }
@@ -216,74 +219,69 @@ public class Tarif {
     }
 
     public String statusToString(String status) {
-        String result;
-        switch (status) { //Текущее состояние блокировки:
-            case "0": // 0-уч. запись активна,
-                result = "Активна";
-                break;
-            case "1", "4": // 1-заблокирована по балансу, 4-по балансу(активная блокировка),
-                result = "Заблокирована по балансу";
-                break;
-            case "2":  // 2-пользователем,
-                result = "Отключена пользователем";
-                break;
-            default: // 3-администратором, 10-уч. запись отключена
-                result = "Отключена оператором";
-        }
-        return result;
+        return switch (status) { //Текущее состояние блокировки:
+            case "0" -> // 0-уч. запись активна,
+                    "Активна";
+            case "1", "4" -> // 1-заблокирована по балансу, 4-по балансу(активная блокировка),
+                    "Заблокирована по балансу";
+            case "2" ->  // 2-пользователем,
+                    "Отключена пользователем";
+            default -> // 3-администратором, 10-уч. запись отключена
+                    "Отключена оператором";
+        };
     }
 
     public String getClickTarif(){
         String request = requestTarif("""
                  <ns1:Login>
                  <login>admin</login> <pass>dcgkmpxv0g</pass> </ns1:Login>
-                """, "Запрос на авторизацию");
+                """);
 
-        if (request == "Не работает"){
-            return ("Телеграмм-бот временно не исправен. Обратитесь в техническую поддержку.");
+        if (request.equals(error)){
+            return botError;
         }else{
             request = requestTarif(" <ns1:getAccounts> <flt>\n" +
                     " <phone>" + getPhone() + "</phone> </flt>\n" +//Здесь должен быть номер
-                    " </ns1:getAccounts>\n", "Запрос на определение данных по номеру телефона");
+                    " </ns1:getAccounts>\n");
 
-            if(request == "Не работает"){
-                return ("Ваш номер телефона не привязан к услуге. Нажмите на кнопку \"Заказать услугу\".");
+            if(request.equals(error)){
+                return service;
             }else{
                 if(tarifFile() == null){
-                    return ("Ваш номер телефона не привязан к услуге. Нажмите на кнопку \"Заказать услугу\".");
+                    return service;
                 }else{
                     //Отслеживаем элементы из Tarif.xml
                     NodeList employeeUid = tarifFile().getDocumentElement().getElementsByTagName("uid");//Указание тега, который будем отслеживать
 
                     //Проверяем существует ли элемент uid
                     if (employeeUid.getLength() <= 0) {
-                        return ("Для этого договора услуги не определены.");
+                        return notService;
                     }else if(employeeUid.getLength() >1){
-                        return ("Для этого договора услуги не определены.");
+                        return notService;
                     }else if(employeeUid.getLength() == 1){
                         Node employeeUi = employeeUid.item(0);
 
                         //Третий запрос: определение количества договоров
                         request = requestTarif(" <ns1:getAgreements> <flt>\n" +
                                 " <userid>" + employeeUi.getTextContent() + "</userid> </flt>\n" +
-                                " </ns1:getAgreements>\n", "Запрос на определение количества договоров по UID");
+                                " </ns1:getAgreements>\n");
 
-                        if(request == "Не работает"){
-                            return ("Для этого договора услуги не определены.");
+                        if(request.equals(error)){
+                            return notService;
                         }else{
                             if(tarifFile() == null){
-                                return ("Для этого договора услуги не определены.");
+                                return notService;
                             }else{
                                 request = requestTarif("<ns1:getVgroups>\n" +
                                         " <flt>\n" +
                                         " <agrmid>"+getAgreement()+"</agrmid> <archive>0</archive> <agentid>1</agentid> </flt>\n" +
-                                        " </ns1:getVgroups>", "Запрос на определение тарифного плана");
+                                        " </ns1:getVgroups>");
 
-                                if(request == "Не работает") {
-                                    return ("Для этого договора услуги не определены.");
+                                if(request.equals(error)) {
+                                    return notService;
                                 }else{
                                     if(tarifFile() == null){
-                                        return ("Для этого договора услуги не определены.");
+                                        return notService;
                                     }else{
                                         NodeList employeeId = tarifFile().getDocumentElement().getElementsByTagName("vgid");//Указание тега, который будем отслеживать
                                         NodeList employeeTarif = tarifFile().getDocumentElement().getElementsByTagName("tarifdescr");//Указание тега, который будем отслеживать
@@ -291,9 +289,9 @@ public class Tarif {
                                         NodeList employeeBlocked = tarifFile().getDocumentElement().getElementsByTagName("blocked");
 
                                         if(employeeId.getLength() <= 0 & employeeTarif.getLength() <= 0){
-                                            return ("Для этого договора услуги не определены.");
+                                            return notService;
                                         }else if(employeeId.getLength() > 0 & employeeTarif.getLength() > 0){
-                                            String out = new String();
+                                            String out = null;
                                             String[] id_ = new String[employeeId.getLength()];
                                             String[] tarif_ = new String[employeeId.getLength()];
                                             String[] blocked = new String[employeeBlocked.getLength()];
@@ -313,7 +311,7 @@ public class Tarif {
                                             }
                                             return "Договор №: " + getNumber() + "\nБаланс счета: " + balance.getTextContent().substring(0, 5) + " рублей\n" + out;
                                         }else{
-                                            return ("Для этого договора услуги не определены.");
+                                            return notService;
                                         }
                                     }
                                 }
@@ -323,6 +321,6 @@ public class Tarif {
                 }
             }
         }
-        return ("Для этого договора услуги не определены.");
+        return notService;
     }
 }

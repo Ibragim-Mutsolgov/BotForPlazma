@@ -51,31 +51,39 @@ public class xmlRequest {
     public String getAgreement() { return agreement; }//Геттер
     public void setAgreement(String agreement) { this.agreement = agreement; }//Сеттер
 
+    String error = "";
+    String responseError = "Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.";
+    String responseOk = "Услуга \"Обещанный платеж\" подключена.";
+    String botError = "Телеграмм-бот временно неисправен. Обратитесь в техническую поддержку.";
+    String legalFace = "Ваш договор оформлен на юридическое лицо. Обратитесь в техническую поддержку.";
+    String physicalFace = "Ваш договор не оформлен на физическое лицо. Обратитесь в техническую поддержку.";
+    String service = "Ваш номер телефона не привязан к услуге. Нажмите на кнопку \"Заказать услугу\".";
+
     //Метод для авторизации
     public void xmlLoginAndPass() throws MalformedURLException {
         //первый запрос: авторизация
         String exception = request("""
                  <ns1:Login>
                  <login>admin</login> <pass>dcgkmpxv0g</pass> </ns1:Login>
-                """, "Запрос на авторизацию");
+                """);
 
-        if(exception != "Не работает") {
+        if(!exception.equals(error)) {
 
 
             //Второй запрос: определение данных пользователя, а именно type и uid
             //И попутно сохраняем ответ в файле web.xml, чтобы можно было распарсить ответ
             exception = request(" <ns1:getAccounts> <flt>\n" +
                     " <phone>" + getPhone() + "</phone> </flt>\n" +//Здесь должен быть номер
-                    " </ns1:getAccounts>\n", "Запрос на определение данных по номеру телефона");
+                    " </ns1:getAccounts>\n");
 
             if(xmlFile() == null){
-                setUsersMessage("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                setUsersMessage(responseError);
             }else{
                 //Отслеживаем элементы из web.xml
                 NodeList employeeType = xmlFile().getDocumentElement().getElementsByTagName("type");//Указание тега, который будем отслеживать
                 NodeList employeeUid = xmlFile().getDocumentElement().getElementsByTagName("uid");//Указание тега, который будем отслеживать
 
-                if(exception != "Не работает") {
+                if(!exception.equals(error)) {
 
                     if(employeeType.getLength() > 0 & employeeUid.getLength() > 0) {
                         //Проверяем существуют ли элементы type и uid
@@ -85,16 +93,16 @@ public class xmlRequest {
 
                             //Проверяем является ли пользователь юр. лицом
                             if (employeeTy.getTextContent().equals("1")) {
-                                setUsersMessage("Ваш договор оформлен на юридическое лицо. Обратитесь в техническую поддержку.");
+                                setUsersMessage(legalFace);
                             } else if (employeeTy.getTextContent().equals("2")) {//Проверяем является ли пользователь физ. лицом
 
                                 //Третий запрос: определение количества договоров
                                 request(" <ns1:getAgreements> <flt>\n" +
                                         " <userid>" + employeeUi.getTextContent() + "</userid> </flt>\n" +
-                                        " </ns1:getAgreements>\n", "Запрос на определение количества договоров по UID");
+                                        " </ns1:getAgreements>\n");
 
                                 if(xmlFile() == null){
-                                    setUsersMessage("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                                    setUsersMessage(responseError);
                                 }else{
                                     //Отслеживаем элементы из web.xml
                                     NodeList employeeAgrm = xmlFile().getDocumentElement().getElementsByTagName("agrmid");//Указание тега, который будем отслеживать
@@ -112,33 +120,32 @@ public class xmlRequest {
                                     } else if(employeeNumber.getLength() == 0 & employeeAgrm.getLength() == 0){
                                         setUsersMessage("У Вас нет заключенного договора.");
                                     }else{
-                                        setUsersMessage("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                                        setUsersMessage(responseError);
                                     }
                                 }
                             } else {//Пользователь не является ни юр. лицом, ни физ. лицом
-                                setUsersMessage("Ваш договор не оформлен на физическое лицо. Обратитесь в техническую поддержку.");
+                                setUsersMessage(physicalFace);
                             }
                         } else {
-                            setUsersMessage("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                            setUsersMessage(responseError);
                         }
                     }else {
-                        setUsersMessage("Ваш номер телефона не привязан к услуге. Нажмите на кнопку \"Заказать услугу\".");
+                        setUsersMessage(service);
                     }
                 }else{
-                    setUsersMessage("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                    setUsersMessage(responseError);
                 }
             }
         }else{
-            setUsersMessage("Телеграмм-бот временно неисправен. Обратитесь в техническую поддержку.");
+            setUsersMessage(botError);
         }
     }
 
     //Метод для отправки запросов
-    public String request(String xmlIn, String xmlNumber) {
+    public String request(String xmlIn) {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:ns1=\"urn:api3\"> <SOAP-ENV:Body>\n"
                 + xmlIn + " </SOAP-ENV:Body>\n" +
                 " </SOAP-ENV:Envelope>";
-        System.out.println(xml);
         StringBuilder resp = new StringBuilder();
         try {
             HttpURLConnection con = (HttpURLConnection) new URL("http://185.35.128.7:34012").openConnection();
@@ -161,10 +168,9 @@ public class xmlRequest {
                     resp.append(inputLine);
                 }
                 in.close();
-                System.out.println(xmlNumber + ": " + resp);
 
             } catch (IOException e) {
-                return ("Не работает");
+                return error;
             }
             //////Вывод сессии
             con.getHeaderFields();
@@ -176,10 +182,10 @@ public class xmlRequest {
                 writer.write(resp.toString());
                 writer.flush();
             } catch (IOException ex) {
-                return ("Не работает");
+                return error;
             }
         } catch (IOException e) {
-            return ("Не работает");
+            return error;
         }
         return null;
     }
@@ -199,16 +205,16 @@ public class xmlRequest {
     //Метод для обработки кнопки-номер договора, так как
     //Номер договора должен прийти в класс xmlRequest раньше,
     //Чем будет вызван четвертый запрос
-    public String clickButtonsNumberAgreements(){
+    public String clickButtonsNumberAgreements() {
         try {
             //Повторно отправляем первый запрос, так как может быть случай,
             //Когда пользователь не нажал кнопку "Обещанный платеж" (тут вопрос авторизации)
             String s = request("""
                      <ns1:Login>
                      <login>admin</login> <pass>dcgkmpxv0g</pass> </ns1:Login>
-                    """, "Запрос на авторизацию");
+                    """);
 
-            if(s==null) {
+            if (!s.equals(error)) {
                 //Тут я решил повторно запросить type, так как возможен такой случай,
                 //Что пользователь нажмет на кнопку "Обещанный платеж", ему выведутся на экран
                 //Кнопки, с указанными в них номерами договоров, и сообщение сохраниться в чате.
@@ -217,132 +223,149 @@ public class xmlRequest {
                 //В результате будет подключена услуга "Обещанный платеж" юр. лицу. Лазейка в системе
 
                 //Второй запрос: определение данных пользователя, а именно type
-                request(" <ns1:getAccounts> <flt>\n" +
+                s = request(" <ns1:getAccounts> <flt>\n" +
                         " <phone>" + getPhone() + "</phone> </flt>\n" +//Здесь должен быть номер
-                        " </ns1:getAccounts>\n", "Запрос на определение данных по номеру телефона");
+                        " </ns1:getAccounts>\n");
 
-                if (xmlFile() == null) {
-                    return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
-                } else {
-                    //Отслеживаем элементы из web.xml
-                    NodeList employeeLbapi = xmlFile().getDocumentElement().getElementsByTagName("lbapi:getAccountsResponse");//Указание тега, который будем отслеживать
-                    Node Lbapi = employeeLbapi.item(0);
+                if (!s.equals(error)) {
+                    if (xmlFile() == null) {
+                        return responseError;
+                    } else {
+                        //Отслеживаем элементы из web.xml
+                        NodeList employeeLbapi = xmlFile().getDocumentElement().getElementsByTagName("lbapi:getAccountsResponse");//Указание тега, который будем отслеживать
+                        Node Lbapi = employeeLbapi.item(0);
 
-                    if (Lbapi.getTextContent() != "") {
+                        if (Lbapi.getTextContent().equals("")) {
 
-                        if (xmlFile() == null) {
-                            return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
-                        } else {
-                            NodeList employeeType = xmlFile().getDocumentElement().getElementsByTagName("type");//Указание тега, который будем отслеживать
-                            NodeList employeeUid = xmlFile().getDocumentElement().getElementsByTagName("uid");//Указание тега, который будем отслеживать
+                            if (xmlFile() == null) {
+                                return responseError;
+                            } else {
+                                NodeList employeeType = xmlFile().getDocumentElement().getElementsByTagName("type");//Указание тега, который будем отслеживать
+                                NodeList employeeUid = xmlFile().getDocumentElement().getElementsByTagName("uid");//Указание тега, который будем отслеживать
 
-                            if (employeeType.getLength() > 0 & employeeUid.getLength() > 0) {
-                                Node type = employeeType.item(0);
-                                Node uid = employeeUid.item(0);
-                                if (employeeType.getLength() == 1 & employeeUid.getLength() == 1) {//Проверяем существует ли type и uid
-                                    if (type.getTextContent().equals("2")) {
-                                        //Повторный третий запрос на тот случай, если пользователь нажал на кнопку номер-договора
-                                        //И при этом он сменил номер договора
+                                if (employeeType.getLength() > 0 & employeeUid.getLength() > 0) {
+                                    Node type = employeeType.item(0);
+                                    if (employeeType.getLength() == 1 & employeeUid.getLength() == 1) {//Проверяем существует ли type и uid
+                                        if (type.getTextContent().equals("2")) {
+                                            //Повторный третий запрос на тот случай, если пользователь нажал на кнопку номер-договора
+                                            //И при этом он сменил номер договора
 
-                                        //Четвертый запрос
-                                        request("<ns1:getPromisePayments>\n" +
-                                                "<flt>\n" +
-                                                "<agrmid>" + getAgreement() + "</agrmid>\n" +
-                                                "</flt>\n" +
-                                                "</ns1:getPromisePayments>", "Запрос на определение количества обещанных платежей");
+                                            //Четвертый запрос
+                                            s = request("<ns1:getPromisePayments>\n" +
+                                                    "<flt>\n" +
+                                                    "<agrmid>" + getAgreement() + "</agrmid>\n" +
+                                                    "</flt>\n" +
+                                                    "</ns1:getPromisePayments>");
 
-                                        if (xmlFile() == null) {
-                                            return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
-                                        } else {
-                                            NodeList employeePromtill = xmlFile().getDocumentElement().getElementsByTagName("promtill");//Указание тега, который будем отслеживать
-
-                                            if (employeePromtill.getLength() > 0) {//Если у пользователя уже был подключен "обещанный платеж"
-                                                ArrayList<String> list = new ArrayList<>();
-
-                                                for (int i = 0; i < employeePromtill.getLength(); i++) {
-                                                    Node employee = employeePromtill.item(i);
-                                                    list.add(employee.getTextContent());
-                                                }
-                                                Date dateNow = new Date();
-                                                String date = list.get(list.size() - 1);
-                                                Date datee = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse(date);
-
-                                                if (dateNow.getTime() > datee.getTime()) {//Подключение обещанного платежа в том случае, если истек период пользования
-
-                                                    //Пятый запрос: запрос на подключение услуги "Обещанный платеж"
-                                                    request(" <ns1:PromisePayment> <agrm>" + getAgreement() + "</agrm>\n" +
-                                                            " <summ>" + 100 + "</summ>\n" +
-                                                            " </ns1:PromisePayment>\n", "Запрос на подключение обещанного платежа");
-
-                                                    if (xmlFile() == null) {
-                                                        return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
-                                                    } else {
-                                                        NodeList employeeRet = xmlFile().getDocumentElement().getElementsByTagName("ret");//Указание тега, который будем отслеживать
-
-                                                        if (employeeRet.getLength() == 1) {
-                                                            Node ret = employeeRet.item(0);
-                                                            if (ret.getTextContent().equals("1")) {
-                                                                return ("Услуга \"Обещанный платеж\" подключена.");
-                                                            } else {
-                                                                return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
-                                                            }
-                                                        } else {
-                                                            return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
-                                                        }
-                                                    }
-                                                } else {
-                                                    return ("Вы активировали платеж в этом месяце. Вторично активирован быть не может.");
-                                                }
-                                            } else if (employeePromtill.getLength() == 0) {//Если у пользователя не был ни разу подключен "Обещанный платеж"
-                                                //пятый запрос: запрос на подключение услуги "Обещанный платеж"
-                                                request(" <ns1:PromisePayment>\n<agrm>" + getAgreement() + "</agrm>\n" +
-                                                        " <summ>" + 100 + "</summ>\n" +
-                                                        " </ns1:PromisePayment>\n", "Запрос на подключение обещанного платежа");
+                                            if (!s.equals(error)) {
 
                                                 if (xmlFile() == null) {
-                                                    return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                                                    return responseError;
                                                 } else {
-                                                    NodeList employeeRet = xmlFile().getDocumentElement().getElementsByTagName("ret");//Указание тега, который будем отслеживать
+                                                    NodeList employeePromtill = xmlFile().getDocumentElement().getElementsByTagName("promtill");//Указание тега, который будем отслеживать
 
-                                                    if (employeeRet.getLength() == 1) {
-                                                        Node ret = employeeRet.item(0);
-                                                        if (ret.getTextContent().equals("1")) {
-                                                            return ("Услуга \"Обещанный платеж\" подключена.");
+                                                    if (employeePromtill.getLength() > 0) {//Если у пользователя уже был подключен "обещанный платеж"
+                                                        ArrayList<String> list = new ArrayList<>();
+
+                                                        for (int i = 0; i < employeePromtill.getLength(); i++) {
+                                                            Node employee = employeePromtill.item(i);
+                                                            list.add(employee.getTextContent());
+                                                        }
+                                                        Date dateNow = new Date();
+                                                        String date = list.get(list.size() - 1);
+                                                        Date datee = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse(date);
+
+                                                        if (dateNow.getTime() > datee.getTime()) {//Подключение обещанного платежа в том случае, если истек период пользования
+
+                                                            //Пятый запрос: запрос на подключение услуги "Обещанный платеж"
+                                                            s = request(" <ns1:PromisePayment> <agrm>" + getAgreement() + "</agrm>\n" +
+                                                                    " <summ>" + 100 + "</summ>\n" +
+                                                                    " </ns1:PromisePayment>\n");
+
+                                                            if(!s.equals(error)) {
+
+                                                                if (xmlFile() == null) {
+                                                                    return responseError;
+                                                                } else {
+                                                                    NodeList employeeRet = xmlFile().getDocumentElement().getElementsByTagName("ret");//Указание тега, который будем отслеживать
+
+                                                                    if (employeeRet.getLength() == 1) {
+                                                                        Node ret = employeeRet.item(0);
+                                                                        if (ret.getTextContent().equals("1")) {
+                                                                            return responseOk;
+                                                                        } else {
+                                                                            return responseError;
+                                                                        }
+                                                                    } else {
+                                                                        return responseError;
+                                                                    }
+                                                                }
+                                                            }else {
+                                                                return responseError;
+                                                            }
                                                         } else {
-                                                            return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                                                            return ("Вы активировали платеж в этом месяце. Вторично активирован быть не может.");
+                                                        }
+                                                    } else if (employeePromtill.getLength() == 0) {//Если у пользователя не был ни разу подключен "Обещанный платеж"
+                                                        //пятый запрос: запрос на подключение услуги "Обещанный платеж"
+                                                        s = request(" <ns1:PromisePayment>\n<agrm>" + getAgreement() + "</agrm>\n" +
+                                                                " <summ>" + 100 + "</summ>\n" +
+                                                                " </ns1:PromisePayment>\n");
+
+                                                        if(!s.equals(error)) {
+
+                                                            if (xmlFile() == null) {
+                                                                return responseError;
+                                                            } else {
+                                                                NodeList employeeRet = xmlFile().getDocumentElement().getElementsByTagName("ret");//Указание тега, который будем отслеживать
+
+                                                                if (employeeRet.getLength() == 1) {
+                                                                    Node ret = employeeRet.item(0);
+                                                                    if (ret.getTextContent().equals("1")) {
+                                                                        return responseOk;
+                                                                    } else {
+                                                                        return responseError;
+                                                                    }
+                                                                } else {
+                                                                    return responseError;
+                                                                }
+                                                            }
+                                                        }else {
+                                                            return responseError;
                                                         }
                                                     } else {
-                                                        return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                                                        return responseError;
                                                     }
                                                 }
-                                            } else {
-                                                return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                                            }else {
+                                                return botError;
                                             }
+                                        } else if (type.getTextContent().equals("1")) {
+                                            return (legalFace);
+                                        } else {
+                                            return (physicalFace);
                                         }
-                                    } else if (type.getTextContent().equals("1")) {
-                                        return ("Ваш договор оформлен на юридическое лицо. Обратитесь в техническую поддержку.");
                                     } else {
-                                        return ("Ваш договор не оформлен на физическое лицо. Обратитесь в техническую поддержку.");
+                                        return responseError;
                                     }
                                 } else {
-                                    return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+                                    return (service);
                                 }
-                            } else {
-                                return ("Ваш номер телефона не привязан к услуге. Нажмите на кнопку \"Заказать услугу\".");
                             }
+                        } else if (Lbapi.getTextContent().equals("")) {
+                            return (service);
+                        } else {
+                            return responseError;
                         }
-                    } else if (Lbapi.getTextContent().equals("")) {
-                        return ("Ваш номер телефона не привязан к услуге. Нажмите на кнопку \"Заказать услугу\".");
-                    } else {
-                        return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
                     }
+                } else {
+                    return botError;
                 }
-            }else{
-                return ("Телеграмм-бот временно неисправен. Обратитесь в техническую поддержку.");
+            } else {
+                return botError;
             }
         } catch (ParseException e) {
-            return ("Для данного договора услуга \"Обещанный платеж\" не предусмотрена. Обратитесь в техническую поддержку.");
+            return responseError;
         }
-
     }
 }
